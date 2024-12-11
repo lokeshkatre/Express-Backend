@@ -1,7 +1,8 @@
 import dotenv from "dotenv";
-//we add -r dotenv/config --experimental-json-modules in script in package.json to enable dotenv
-
+//we add -r dotenv/config --experimental-json-modules in script in package.json to enable import of dotenv
+//we can directly use require but we need consistency so we use import 
 import connectDB from "./db/index.js";
+import { app } from "./app.js";
 
 dotenv.config({
     path: "./env"
