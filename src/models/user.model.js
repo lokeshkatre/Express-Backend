@@ -56,7 +56,7 @@ userSchema.pre("save", async function(next){
     //otherwise if password is updated then online hash the password
     if(!this.isModified("password")) return next();
 
-    this.password = bcrypt.hash(this.password,10)
+    this.password = await bcrypt.hash(this.password,10)
     next();
 })
 
