@@ -30,6 +30,4 @@ import userRouter from './routes/user.routes.js';
 // the url looks like http://localhost:8000/api/v1/users/xxxxxx  as control goes to userRouter
 app.use("/api/v1/users",userRouter);
 
-
-
 export { app };
