@@ -7,7 +7,6 @@ import {ApiResponse} from "../utils/ApiResponse.js"
 const registerUser = asyncHandler(async (req,res)=>{
     //get user detail from frontend
     const {fullName,email,username,password} = req.body;
-    console.log("email: ",email);
 
     //validation-not empty
     if(
@@ -17,17 +16,24 @@ const registerUser = asyncHandler(async (req,res)=>{
     }
 
     //user already exist:: username, email
-    const existedUser = User.findOne({
+    const existedUser = await User.findOne({
         $or: [{ email },{ username }]
     })
-
     if(existedUser){
         throw new ApiError(409,"User with username or email already exist");
     }
 
     //check for images  
+    //? for optional
     const avatarLocalPath = req.files?.avatar[0]?.path;
-    const coverImageLocalPath = req.files?.coverImage[0]?.path;
+    // const coverImageLocalPath = req.files?.coverImage[0]?.path;
+    //In above line of code this can give error if we not upload coverImage as
+    //in req.files?. coverImage is undefined and we are find path property in undefined
+    //to handle this code we are doing following..
+    let coverImageLocalPath;
+    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length>0){
+        coverImageLocalPath = req.files.coverImage[0].path;
+    }
 
     //check for avatar
     if(!avatarLocalPath){
@@ -39,7 +45,7 @@ const registerUser = asyncHandler(async (req,res)=>{
     const coverImage = await uploadOnCloudinary(coverImageLocalPath);
 
     if(!avatar){
-        throw new ApiError(400,"Avatar file is not uploaded on cloudinary");
+        throw new ApiError(400,"Unable to upload Avatar file");
     }
 
 
@@ -68,6 +74,5 @@ const registerUser = asyncHandler(async (req,res)=>{
         new ApiResponse(200, createdUser, "User registered successfully")
     )
 })
-
 
 export {registerUser};
