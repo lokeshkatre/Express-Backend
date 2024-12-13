@@ -180,7 +180,7 @@ const refreshAccessToken = asyncHandler( async(req,res)=>{
     //getting refresh token from cookie
     const incomingRefreshToken = req.cookie.refreshToken || req.body.refreshToken;
     
-    if(incomingRefreshToken){
+    if(!incomingRefreshToken){
         throw new ApiError(401,"Unauthorize request");
     }
 
@@ -192,7 +192,7 @@ const refreshAccessToken = asyncHandler( async(req,res)=>{
         )
     
         //Refresh token saved in Database
-        const user = await User.findById(decodeToken?._id)
+        const user = await User.findById(decodedToken?._id)
     
         if(!user){
             throw new ApiError(401,"Invalid refresh token");
