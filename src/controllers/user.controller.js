@@ -156,8 +156,8 @@ const logoutUser = asyncHandler(async (req, res) => {
     await User.findByIdAndUpdate(
         req.user._id,
         {
-            $set: {
-                refreshToken: undefined
+            $unset: {
+                refreshToken: 1 //this removes fields from the document
             }
         },
         {
@@ -179,10 +179,10 @@ const logoutUser = asyncHandler(async (req, res) => {
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
     //getting refresh token from cookie
-    const incomingRefreshToken = req.cookie.refreshToken || req.body.refreshToken;
-
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
+    
     if (!incomingRefreshToken) {
-        throw new ApiError(401, "Unauthorize request");
+        throw new ApiError(401, "Unauthorize request");r
     }
 
     try {
@@ -208,16 +208,17 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
             secure: true
         }
 
-        const { accessToken, newRefreshToken } = await generateAccessAndRefereshTokens(user._id);
+        const {accessToken, refreshToken} = await generateAccessAndRefereshTokens(user._id);
+        
 
         return res
             .status(200)
             .cookie("accessToken", accessToken, options)
-            .cookie("refreshToken", newRefreshToken, options)
+            .cookie("refreshToken", refreshToken, options)
             .json(
                 new ApiResponse(
                     200,
-                    { accessToken, refreshToken: newRefreshToken },
+                    {accessToken ,refreshToken},
                     "Access Token refreshed"
                 )
             )
@@ -304,7 +305,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Error while Uploading New Avatar");
     }
 
-    const user = User.findByIdAndUpdate(
+    const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
             $set: {
@@ -336,7 +337,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Error while Uploading New Cover Image");
     }
 
-    const user = User.findByIdAndUpdate(
+    const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
             $set: {
@@ -354,7 +355,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
 })
 
 const getUserChannelProfile = asyncHandler(async (req, res) => {
-    const { username } = req.param;  //username from the url
+    const { username } = req.params;  //username from the url
 
     if (!username?.trim()) {
         throw new ApiError(400, "Username is missing in user channel profile");
@@ -440,7 +441,7 @@ const getWatchHistory = asyncHandler( async(req,res)=>{
                 from: "videos",
                 localField: "watchHistory",
                 foreignField: "_id",
-                as: watchHistory,
+                as: "watchHistory",
                 pipeline:[
                     {
                         $lookup:{

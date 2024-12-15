@@ -41,7 +41,7 @@ router.route("/refresh-token").post(refreshAccessToken)
 
 router.route("/change-password").post(verifyJWT, changeCurrentPassword)
 
-router.route("/current-user").post(verifyJWT, getCurrentUser);
+router.route("/current-user").get(verifyJWT, getCurrentUser);
 
 //if use post all the details will be updated
 router.route("/update-account").patch(verifyJWT, updateAccountDetails);
