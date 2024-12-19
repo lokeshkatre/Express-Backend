@@ -222,6 +222,17 @@ const updateVideo = asyncHandler(async (req, res) => {
     if (user._id.toString() !== video.owner.toString()) {
         throw new ApiError(401, "Unauthorized request while updating video");
     }
+    
+    //delete the video
+    //split returns an array of string in which last element is publicId.extension then pop gives last element
+    //then split by "." first element gives the publicId
+    const cloudinaryPublicId = video.thumbnail.split("/").pop().split(".")[0];
+
+    if(!cloudinaryPublicId){
+        throw new ApiError(400,"Unable to find the cloudinary Public Id");
+    }
+
+    await deleteFromCloudinary(cloudinaryPublicId);
 
     const thumbnail = await uploadOnCloudinary(thumbnailLocalPath);
 
@@ -272,6 +283,8 @@ const deleteVideo = asyncHandler(async (req, res) => {
     }
 
     //delete the video
+    //split returns an array of string in which last element is publicId.extension then pop gives last element
+    //then split by "." first element gives the publicId
     const cloudinaryPublicId = video.thumbnail.split("/").pop().split(".")[0];
 
     if(!cloudinaryPublicId){
@@ -280,8 +293,8 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
     try {
         // Delete the video thumbnail from Cloudinary
-        console.log(cloudinaryPublicId);
-        deleteFromCloudinary(cloudinaryPublicId);
+       
+        await deleteFromCloudinary(cloudinaryPublicId);
 
         // Delete the video record from the database
         await Video.findByIdAndDelete(videoId);

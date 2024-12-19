@@ -1,7 +1,7 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiErrors.js";
 import { User } from "../models/user.model.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { deleteFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken"
 import mongoose from "mongoose";
@@ -298,6 +298,20 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     if (!avatarLocalPath) {
         throw new ApiError(400, "Avatar file is missing")
     }
+    const oldAvatar = req.user?.avatar;
+
+    if(!oldAvatar){
+        throw new ApiError(500,"Something went wrong while getting old avatar url");
+    }
+
+    //find the publicId of avatar url
+    const avatarPublicId = oldAvatar.split("/").pop().split(".")[0];
+
+    if(!avatarPublicId){
+        throw new ApiError(500,"Unable to find the publicId for avatar");
+    }
+
+    await deleteFromCloudinary(avatarPublicId);
 
     const avatar = await uploadOnCloudinary(avatarLocalPath);
 
@@ -330,6 +344,21 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     if (!coverImageLocalPath) {
         throw new ApiError(400, "Cover Image file is missing")
     }
+
+    const oldCoverImage = req.user.coverImage;
+
+    if(!oldCoverImage){
+        throw new ApiError(500,"Something went wrong while fetching old cover image url");
+    }
+
+    //finding the publicId of old cloudinary coverImage url
+    const coverImagePublicId = oldCoverImage.split("/").pop().split(".")[0];
+
+    if(!coverImagePublicId){
+        throw new ApiError(500,"Unable to find the publicId of cover image");
+    }
+
+    await deleteFromCloudinary(coverImagePublicId);
 
     const coverImage = await uploadOnCloudinary(coverImageLocalPath);
 
