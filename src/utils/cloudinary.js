@@ -27,6 +27,28 @@ const uploadOnCloudinary = async (localFilePath) => {
     }
 }
 
+const deleteFromCloudinary = async (publicId) => {
+    try {
+        if (!publicId) {
+            throw new Error("Public ID is required for deletion");
+        }
+
+        // Delete the file from Cloudinary
+        const response = await cloudinary.uploader.destroy(publicId);
+
+        if (response.result !== "ok" && response.result !== "not found") {
+            throw new Error(`Failed to delete from Cloudinary: ${response.result}`);
+        }
+
+        return response;
+    } catch (error) {
+        console.error("Cloudinary deletion error:", error.message);
+        return null;
+    }
+};
+
+
+
 // // Function to extract public_id from Cloudinary URL
 // const extractPublicId = (imageUrl)=>{
 //     const urlParts = imageUrl.split('/');
@@ -46,4 +68,4 @@ const uploadOnCloudinary = async (localFilePath) => {
 //     }
 //   }
 
-export { uploadOnCloudinary };
+export { uploadOnCloudinary, deleteFromCloudinary  };
