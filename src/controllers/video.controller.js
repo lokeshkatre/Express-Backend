@@ -174,6 +174,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
 
 const getVideoById = asyncHandler(async (req, res) => {
     const { videoId } = req.params;
+    const user = req.user;
 
     // Validate videoId
     if (!videoId || !mongoose.Types.ObjectId.isValid(videoId)) {
@@ -185,6 +186,17 @@ const getVideoById = asyncHandler(async (req, res) => {
 
     if (!video) {
         throw new ApiError(404, "Video not found");
+    }
+
+    // Check if the video is unpublished
+    if (!video.isPublished && !video.owner.equals(user._id)) {
+        throw new ApiError(403, "You are not authorized to view this video");
+    }
+
+    // Increment views only for published videos
+    if (video.isPublished) {
+        video.views += 1;
+        await video.save();
     }
 
     // Return response
@@ -201,7 +213,7 @@ const getVideoById = asyncHandler(async (req, res) => {
 const updateVideo = asyncHandler(async (req, res) => {
     const { videoId } = req.params
     const thumbnailLocalPath = req.file?.path;
-    const {title,description} = req.body;
+    const { title, description } = req.body;
     //TODO: update video details like title, description, thumbnail
     if (!videoId || !mongoose.Types.ObjectId.isValid(videoId)) {
         throw new ApiError(400, "Invalid video ID");
@@ -214,22 +226,22 @@ const updateVideo = asyncHandler(async (req, res) => {
     const video = await Video.findById(videoId);
     const user = req?.user;
 
-    if(!video){
-        throw new ApiError(404,"Video not Found");
+    if (!video) {
+        throw new ApiError(404, "Video not Found");
     }
 
     // Only the owner is allowed to update
     if (user._id.toString() !== video.owner.toString()) {
         throw new ApiError(401, "Unauthorized request while updating video");
     }
-    
+
     //delete the video
     //split returns an array of string in which last element is publicId.extension then pop gives last element
     //then split by "." first element gives the publicId
     const cloudinaryPublicId = video.thumbnail.split("/").pop().split(".")[0];
 
-    if(!cloudinaryPublicId){
-        throw new ApiError(400,"Unable to find the cloudinary Public Id");
+    if (!cloudinaryPublicId) {
+        throw new ApiError(400, "Unable to find the cloudinary Public Id");
     }
 
     await deleteFromCloudinary(cloudinaryPublicId);
@@ -244,7 +256,7 @@ const updateVideo = asyncHandler(async (req, res) => {
         videoId,
         {
             $set: {
-                thumbnail : thumbnail.url,
+                thumbnail: thumbnail.url,
                 title,
                 description
             }
@@ -255,31 +267,31 @@ const updateVideo = asyncHandler(async (req, res) => {
     )
 
     return res
-    .status(200)
-    .json(
-        new ApiResponse(
-            200,
-            newVideo,
-            "Video thumbnail updated successfully"
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                newVideo,
+                "Video thumbnail updated successfully"
+            )
         )
-    )
 })
 
 const deleteVideo = asyncHandler(async (req, res) => {
     const { videoId } = req.params
     //TODO: delete video
-    if(!videoId || !mongoose.Types.ObjectId.isValid(videoId)){
-        throw new ApiError(400,"Invalid video ID")
+    if (!videoId || !mongoose.Types.ObjectId.isValid(videoId)) {
+        throw new ApiError(400, "Invalid video ID")
     }
 
     const user = req?.user;
     const video = await Video.findById(videoId);
-    if(!video){
-        throw new ApiError(404,"Video not found");
+    if (!video) {
+        throw new ApiError(404, "Video not found");
     }
 
-    if(user._id.toString()!==video.owner.toString()){
-        throw new ApiError(401,"Unauthorized request to delete video");
+    if (user._id.toString() !== video.owner.toString()) {
+        throw new ApiError(401, "Unauthorized request to delete video");
     }
 
     //delete the video
@@ -287,13 +299,13 @@ const deleteVideo = asyncHandler(async (req, res) => {
     //then split by "." first element gives the publicId
     const cloudinaryPublicId = video.thumbnail.split("/").pop().split(".")[0];
 
-    if(!cloudinaryPublicId){
-        throw new ApiError(400,"Unable to find the cloudinary Public Id");
+    if (!cloudinaryPublicId) {
+        throw new ApiError(400, "Unable to find the cloudinary Public Id");
     }
 
     try {
         // Delete the video thumbnail from Cloudinary
-       
+
         await deleteFromCloudinary(cloudinaryPublicId);
 
         // Delete the video record from the database
@@ -315,19 +327,19 @@ const deleteVideo = asyncHandler(async (req, res) => {
 const togglePublishStatus = asyncHandler(async (req, res) => {
     const { videoId } = req.params
 
-    if(!videoId || !mongoose.Types.ObjectId.isValid(videoId)){
-        throw new ApiError(400,"Invalid Vidoe ID");
+    if (!videoId || !mongoose.Types.ObjectId.isValid(videoId)) {
+        throw new ApiError(400, "Invalid Vidoe ID");
     }
 
     const user = req.user;
     const video = await Video.findById(videoId);
 
-    if(!video){
-        throw new ApiError(404,"Video not Found");
+    if (!video) {
+        throw new ApiError(404, "Video not Found");
     }
 
-    if(user._id.toString() !== video.owner.toString()){
-        throw new ApiError(401,"Unauthorized request to toggle Pulish Status");
+    if (user._id.toString() !== video.owner.toString()) {
+        throw new ApiError(401, "Unauthorized request to toggle Pulish Status");
     }
 
     const isPublished = !video.isPublished;
@@ -345,14 +357,14 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     )
 
     return res
-    .status(200)
-    .json(
-        new ApiResponse(
-            200,
-            newVideo,
-            "Toggled Publish Status of video successfully"
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                newVideo,
+                "Toggled Publish Status of video successfully"
+            )
         )
-    )
 
 })
 
